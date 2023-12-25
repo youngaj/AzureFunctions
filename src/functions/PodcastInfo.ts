@@ -17,11 +17,12 @@ export async function PodcastInfo(request: HttpRequest, context: InvocationConte
 
   const podcasts = await getPodcasts();
 
-  const starred = await getStarredPodcasts(podcasts);
+  const starredPromise = getStarredPodcasts(podcasts);
 
-  const queue = await getQueuedEpisodes(podcasts);
+  const queuePromise = getQueuedEpisodes(podcasts);
 
-  let stats = await getPodcastStats();
+  let statsPromise = getPodcastStats();
+  const [starred, queue, stats] = await Promise.all([starredPromise, queuePromise, statsPromise]);
 
   const response = {
     queue: queue,
