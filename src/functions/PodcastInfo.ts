@@ -11,9 +11,11 @@ import {
   PocketCastQueuedEpisodeResponse,
 } from "./types";
 
+/**
+ * Main function to return podcast data.
+ */
 export async function PodcastInfo(request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
-  axios.defaults.headers.common["Authorization"] = process.env["pocketCastsAuthorizationToken"];
-  await verifyCredentials(axios);
+  await verifyAuthorization(axios);
 
   const podcasts = await getPodcasts();
 
@@ -70,7 +72,7 @@ async function getQueuedEpisodes(podcasts: PodCast[]) {
     } catch (error) {
       console.error(`Error trying to retrieve showNotes for queued episode ${pocketCastQueuedEpisode.uuid}`, error);
     }
-    episode.podcast = _getPodcast(episode.podcastUuid, podcasts);
+    episode.podcast = findPodcastByUUID(episode.podcastUuid, podcasts);
     return pocketCastQueuedEpisode;
   });
 
@@ -91,7 +93,7 @@ async function getStarredPodcasts(podcasts: PodCast[]): Promise<StarredEpisode[]
     } catch (error) {
       console.error(`Error trying to retrieve showNotes for starred episode ${pocketCastStarredEpisode.uuid}`, error);
     }
-    starredEpisode.podcast = _getPodcast(pocketCastStarredEpisode.podcastUuid, podcasts);
+    starredEpisode.podcast = findPodcastByUUID(pocketCastStarredEpisode.podcastUuid, podcasts);
     return starredEpisode;
   });
 
@@ -99,7 +101,7 @@ async function getStarredPodcasts(podcasts: PodCast[]): Promise<StarredEpisode[]
   return starred;
 }
 
-function _getPodcast(podcastUuid: string, podcasts: PodCast[]) {
+function findPodcastByUUID(podcastUuid: string, podcasts: PodCast[]) {
   const podcast = podcasts.find((x) => x.uuid === podcastUuid);
   return podcast;
 }
@@ -128,12 +130,15 @@ async function getCredentials() {
   return credentials;
 }
 
-async function verifyCredentials(axios: AxiosStatic) {
+async function verifyAuthorization(axios: AxiosStatic) {
+  axios.defaults.headers.common["Authorization"] = process.env["pocketCastsAuthorizationToken"];
   try {
     await axios.get("https://api.pocketcasts.com/subscription/status");
   } catch (error) {
     const credentials = await getCredentials();
-    axios.defaults.headers.common["Authorization"] = `${credentials.tokenType} ${credentials.accessToken}`;
+    const authorization = `${credentials.tokenType} ${credentials.accessToken}`;
+    axios.defaults.headers.common["Authorization"] = authorization;
+    process.env["pocketCastsAuthorizationToken"] = authorization;
   }
   return axios;
 }
