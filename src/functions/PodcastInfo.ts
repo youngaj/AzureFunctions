@@ -68,12 +68,12 @@ async function getQueuedEpisodes(podcasts: PodCast[]) {
       showNotes: "",
     };
     try {
-      episode.showNotes = await getShowNotes(episode.podcastUuid);
+      episode.showNotes = await getShowNotes(episode.uuid);
     } catch (error) {
       console.error(`Error trying to retrieve showNotes for queued episode ${pocketCastQueuedEpisode.uuid}`, error);
     }
     episode.podcast = findPodcastByUUID(episode.podcastUuid, podcasts);
-    return pocketCastQueuedEpisode;
+    return episode;
   });
 
   //-- Add show notes to episodes
